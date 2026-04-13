@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regulatory Workflow Demo Use Cases</title>
+    <style>
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        margin: 36px;
+        color: #1f1f1f;
+        line-height: 1.45;
+      }
+      h1, h2, h3 {
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: 24px;
+        border-bottom: 2px solid #2d5a4a;
+        padding-bottom: 10px;
+      }
+      h2 {
+        font-size: 18px;
+        margin-top: 28px;
+        color: #2d5a4a;
+      }
+      h3 {
+        font-size: 14px;
+        margin-top: 18px;
+      }
+      p, li {
+        font-size: 11px;
+      }
+      .note {
+        background: #f5efe3;
+        border-left: 4px solid #b45a2a;
+        padding: 12px 14px;
+        margin: 16px 0 24px;
+      }
+      .block {
+        white-space: pre-wrap;
+        font-family: "Courier New", monospace;
+        font-size: 10px;
+        border: 1px solid #d8d2c6;
+        background: #faf8f3;
+        padding: 12px;
+      }
+      .case {
+        page-break-inside: avoid;
+        margin-bottom: 24px;
+      }
+      ul {
+        padding-left: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Regulatory Workflow Automation Demo Use Cases</h1>
+    <div class="note">
+      <strong>Usage note:</strong> These examples are for reviewer support and system demonstration only.
+      The tool should produce draft analysis, suggested prioritisation, potential duplicates, and draft reports.
+      It must not be treated as a final medical, legal, or regulatory decision-maker.
+    </div>
+
+    <div class="case">
+      <h2>Use Case 1: SAE-Style Adverse Event Review</h2>
+      <h3>Primary Narrative / Submission Text</h3>
+      <div class="block">Patient Ms. Kavita Sharma, female, 45 years old, reported severe skin rash and breathing difficulty after taking DrugX for 3 days. She was admitted to City Care Hospital for observation. Case ID: SAE-101. Reporter: Dr. R. Mehta. The event improved after stopping the drug. Follow-up causality assessment is pending.</div>
+      <h3>Previous Version Text</h3>
+      <div class="block">Patient reported skin rash after taking DrugX. Case ID: SAE-101. Follow-up review is pending.</div>
+      <h3>Duplicate Candidate Documents</h3>
+      <div class="block">DOC-1::Patient Ms. Kavita Sharma, female, 45 years old, reported severe skin rash and breathing difficulty after taking DrugX for 3 days. She was admitted to City Care Hospital for observation.
+
+DOC-2::Patient Kavita Sharma reported severe rash and breathing difficulty after DrugX and was admitted to City Care Hospital.
+
+DOC-3::Patient reported mild nausea after DrugY and was treated at home.</div>
+      <h3>Structured Form Data</h3>
+      <div class="block">{
+  "case_id": "SAE-101",
+  "patient_age": "45",
+  "gender": "female",
+  "reporter_name": "Dr. R. Mehta",
+  "suspect_product": "DrugX"
+}</div>
+    </div>
+
+    <div class="case">
+      <h2>Use Case 2: Hospitalization Support Review</h2>
+      <h3>Primary Narrative / Submission Text</h3>
+      <div class="block">Patient Mr. Arun Nair, male, 63 years old, developed chest discomfort, dizziness, and low blood pressure after receiving ProductA. He was hospitalized for monitoring in Sunrise Medical College. Case ID: SAE-102. Reporter: Dr. Neha Jain. The patient was stabilized within 24 hours and discharged with advice for follow-up.</div>
+      <h3>Previous Version Text</h3>
+      <div class="block">Patient developed dizziness after receiving ProductA. Case ID: SAE-102. Monitoring was advised.</div>
+      <h3>Duplicate Candidate Documents</h3>
+      <div class="block">DOC-1::Patient developed chest discomfort and dizziness after ProductA and was hospitalized for monitoring.
+
+DOC-2::Patient developed chest discomfort and dizziness after ProductA and was admitted for monitoring.
+
+DOC-3::Patient had headache after ProductB and did not require admission.</div>
+      <h3>Structured Form Data</h3>
+      <div class="block">{
+  "case_id": "SAE-102",
+  "patient_age": "63",
+  "gender": "male",
+  "reporter_name": "Dr. Neha Jain",
+  "suspect_product": "ProductA"
+}</div>
+    </div>
+
+    <div class="case">
+      <h2>Use Case 3: Clinical Application Completeness Check</h2>
+      <p><strong>Frontend settings:</strong> Document Type = application, Checklist Type = clinical_application</p>
+      <h3>Primary Narrative / Submission Text</h3>
+      <div class="block">Application ID: CTA-201. Applicant: ABC Pharma Pvt Ltd. Study Title: Phase III clinical study for DrugM in uncontrolled hypertension. Indication: Hypertension. Site Count: 12. Ethics Committee: Approved. The submission includes protocol synopsis, investigator brochure, and insurance summary. However, one checklist annexure is still pending.</div>
+      <h3>Previous Version Text</h3>
+      <div class="block">Application ID: CTA-201. Applicant: ABC Pharma Pvt Ltd. Study Title: clinical study for DrugM in hypertension. Site Count: 10. Ethics Committee: Under review.</div>
+      <h3>Duplicate Candidate Documents</h3>
+      <div class="block">DOC-1::Application ID CTA-201 for DrugM in hypertension with 12 sites and ethics approval.
+
+DOC-2::CTA-201 submission for DrugM in uncontrolled hypertension with 12 sites and ethics approval.</div>
+      <h3>Structured Form Data</h3>
+      <div class="block">{
+  "application_id": "CTA-201",
+  "applicant_name": "ABC Pharma Pvt Ltd",
+  "study_title": "Phase III clinical study for DrugM in uncontrolled hypertension",
+  "indication": "Hypertension",
+  "site_count": "12",
+  "ethics_committee_status": "Approved"
+}</div>
+    </div>
+
+    <div class="case">
+      <h2>Use Case 4: Meeting Summary Synthesis</h2>
+      <p><strong>Frontend settings:</strong> Document Type = meeting</p>
+      <h3>Primary Narrative / Submission Text</h3>
+      <div class="block">The committee reviewed the safety update for DrugQ and discussed two unresolved questions on patient monitoring. Members agreed that the sponsor should submit a revised risk management note within 7 days. The protocol deviation issue was noted but not considered critical. Next meeting will review the revised submission and assign follow-up actions.</div>
+      <h3>Previous Version Text</h3>
+      <div class="block">The committee reviewed the safety update for DrugQ. Follow-up information from the sponsor was requested.</div>
+      <h3>Duplicate Candidate Documents</h3>
+      <div class="block">DOC-1::Committee reviewed DrugQ safety update and asked for revised risk management note.
+
+DOC-2::Meeting discussed DrugQ safety and requested revised risk management note within 7 days.</div>
+      <h3>Structured Form Data</h3>
+      <div class="block">{
+  "case_id": "MTG-301",
+  "reporter_name": "Internal Committee Note",
+  "suspect_product": "DrugQ"
+}</div>
+    </div>
+
+    <div class="case">
+      <h2>Use Case 5: Inspection Report Draft</h2>
+      <p><strong>Frontend settings:</strong> Document Type = inspection</p>
+      <h3>Primary Narrative / Submission Text</h3>
+      <div class="block">During inspection, the team observed missing signatures on two batch records and incomplete equipment cleaning logs. One storage temperature record was not updated for the previous day. Staff stated that corrective action would be submitted within 5 working days. No evidence of product mix-up was found during the visit.</div>
+      <h3>Previous Version Text</h3>
+      <div class="block">Inspection noted missing signatures on batch records. Corrective action was requested.</div>
+      <h3>Duplicate Candidate Documents</h3>
+      <div class="block">DOC-1::Inspection observed missing signatures on batch records and incomplete cleaning logs.
+
+DOC-2::Inspection found incomplete cleaning logs and unsigned batch records.</div>
+      <h3>Structured Form Data</h3>
+      <div class="block">{
+  "application_id": "INS-401",
+  "applicant_name": "XYZ Lifesciences",
+  "study_title": "Routine GMP inspection",
+  "indication": "Manufacturing compliance",
+  "site_count": "1",
+  "ethics_committee_status": "Not Applicable"
+}</div>
+    </div>
+  </body>
+</html>

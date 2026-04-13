@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regulatory Workflow Automation</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">CDSCO-Style AI Review Workspace</p>
+          <h1>Support regulatory review with guided analysis, dynamic summaries, and a formatted draft report.</h1>
+          <p class="hero-text">
+            Paste your case narrative, application details, meeting notes, or inspection observations. The system produces
+            reviewer support outputs only, with structured visuals and a styled report instead of raw technical JSON.
+          </p>
+          <div class="hero-actions">
+            <button id="load-sample" class="button button-primary">Load Sample Case</button>
+            <a class="button button-secondary" href="/docs" target="_blank" rel="noreferrer">Open API Docs</a>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="metric">
+            <span class="metric-label">Main Action</span>
+            <strong>Run Full Analysis and Generate Report</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Output Mode</span>
+            <strong>Reviewer Support, Not Final Decision</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Visual Summary</span>
+            <strong>Risk, completeness, duplicates, changes</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel form-panel">
+          <div class="panel-heading">
+            <h2>Input Workspace</h2>
+            <p>Fill in the narrative and supporting fields, then run the full analysis in one click.</p>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>Document Type</span>
+              <select id="document-type">
+                <option value="sae_case">SAE Case</option>
+                <option value="application">Clinical Application</option>
+                <option value="meeting">Meeting Summary</option>
+                <option value="inspection">Inspection Notes</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Checklist Type</span>
+              <select id="checklist-type">
+                <option value="sae_report">SAE Report</option>
+                <option value="clinical_application">Clinical Application</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Portal</span>
+              <select id="portal">
+                <option value="SUGAM">SUGAM</option>
+                <option value="MD Online">MD Online</option>
+              </select>
+            </label>
+
+            <label class="field field-checkbox">
+              <span>Use pseudonymization</span>
+              <input id="pseudonymize" type="checkbox" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Primary Narrative / Submission Text</span>
+            <textarea id="main-text" rows="10" placeholder="Paste SAE narration, application narrative, meeting transcript, or inspection notes here."></textarea>
+          </label>
+
+          <div class="field-grid two-column">
+            <label class="field">
+              <span>Previous Version Text</span>
+              <textarea id="comparison-text" rows="8" placeholder="Optional: paste the older version for document comparison."></textarea>
+            </label>
+
+            <label class="field">
+              <span>Duplicate Candidate Documents</span>
+              <textarea id="duplicate-text" rows="8" placeholder="One document per block. Start each block with DOC_ID:: then paste the text.&#10;&#10;Example:&#10;DOC-1::Patient admitted after adverse event...&#10;&#10;DOC-2::Patient admitted after adverse event..."></textarea>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Structured Form Data</span>
+            <textarea id="form-data" rows="8" placeholder='Enter JSON, for example: {"case_id":"SAE-001","patient_age":"58","gender":"male"}'></textarea>
+          </label>
+
+          <div class="action-row">
+            <button id="run-analysis" class="button button-primary">Run Full Analysis and Generate Report</button>
+            <button id="download-report" class="button button-ghost" disabled>Download Report</button>
+          </div>
+
+          <div id="status-banner" class="status-banner hidden"></div>
+        </section>
+
+        <section class="panel output-panel">
+          <div class="panel-heading">
+            <h2>Analysis Dashboard</h2>
+            <p>Formatted report, visual indicators, and review-support outputs update dynamically for each case.</p>
+          </div>
+
+          <div class="result-stack">
+            <div class="dashboard-grid">
+              <div class="result-card insight-card">
+                <span class="card-kicker">Case Signal</span>
+                <div class="result-title-row">
+                  <h3>Support Summary</h3>
+                  <span id="risk-pill" class="pill neutral">Awaiting run</span>
+                </div>
+                <p id="support-note" class="support-note">
+                  This workspace produces reviewer support outputs only. Human reviewers remain the decision-makers.
+                </p>
+                <div class="stats-grid">
+                  <div class="stat-box">
+                    <span class="stat-label">Completeness</span>
+                    <strong id="completeness-stat">--</strong>
+                  </div>
+                  <div class="stat-box">
+                    <span class="stat-label">Suggested Severity</span>
+                    <strong id="severity-stat">--</strong>
+                  </div>
+                  <div class="stat-box">
+                    <span class="stat-label">Potential Duplicates</span>
+                    <strong id="duplicates-stat">--</strong>
+                  </div>
+                  <div class="stat-box">
+                    <span class="stat-label">Version Changes</span>
+                    <strong id="changes-stat">--</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="result-card chart-card">
+                <span class="card-kicker">Visual Snapshot</span>
+                <h3>Reviewer Visuals</h3>
+                <div class="meter-block">
+                  <div class="meter-header">
+                    <span>Completeness Score</span>
+                    <strong id="completeness-meter-label">0%</strong>
+                  </div>
+                  <div class="meter-track">
+                    <div id="completeness-meter-fill" class="meter-fill"></div>
+                  </div>
+                </div>
+                <div class="bar-chart">
+                  <div class="bar-row">
+                    <span>Death</span>
+                    <div class="bar-track"><div id="bar-death" class="bar-fill severity-death"></div></div>
+                    <strong id="label-death">0%</strong>
+                  </div>
+                  <div class="bar-row">
+                    <span>Disability</span>
+                    <div class="bar-track"><div id="bar-disability" class="bar-fill severity-disability"></div></div>
+                    <strong id="label-disability">0%</strong>
+                  </div>
+                  <div class="bar-row">
+                    <span>Hospitalization</span>
+                    <div class="bar-track"><div id="bar-hospitalization" class="bar-fill severity-hospitalization"></div></div>
+                    <strong id="label-hospitalization">0%</strong>
+                  </div>
+                  <div class="bar-row">
+                    <span>Other</span>
+                    <div class="bar-track"><div id="bar-other" class="bar-fill severity-other"></div></div>
+                    <strong id="label-other">0%</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-card report-card">
+              <div class="report-header">
+                <div>
+                  <span class="card-kicker">Draft Report</span>
+                  <h3 id="report-title">Regulatory Evaluation Review Report</h3>
+                </div>
+                <div class="report-meta">
+                  <span id="report-portal" class="meta-chip">Portal: --</span>
+                  <span id="report-document" class="meta-chip">Type: --</span>
+                </div>
+              </div>
+              <div id="report-view" class="report-view">
+                <div class="report-placeholder">Run the analysis to generate a formatted report.</div>
+              </div>
+            </div>
+
+            <div class="summary-grid">
+              <div class="result-card">
+                <h3>Anonymised Text</h3>
+                <pre id="anonymized-view">No output yet.</pre>
+              </div>
+              <div class="result-card">
+                <h3>Reviewer Digest</h3>
+                <ul id="digest-view" class="compact-list">
+                  <li>No summary yet.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="summary-grid triple">
+              <div class="result-card">
+                <h3>Completeness and Consistency</h3>
+                <div id="validation-view" class="result-body">No validation output yet.</div>
+              </div>
+              <div class="result-card">
+                <h3>Suggested Severity Signals</h3>
+                <div id="classification-view" class="result-body">No classification output yet.</div>
+              </div>
+              <div class="result-card">
+                <h3>Potential Duplicates and Changes</h3>
+                <div id="comparison-view" class="result-body">No deduplication or comparison output yet.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

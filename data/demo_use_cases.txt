@@ -1,0 +1,140 @@
+REGULATORY WORKFLOW AUTOMATION DEMO USE CASES
+
+Usage note:
+These examples are for reviewer support and system demonstration only.
+The tool should produce draft analysis, suggested prioritisation, potential duplicates, and draft reports.
+It must not be treated as a final medical, legal, or regulatory decision-maker.
+
+======================================================================
+USE CASE 1: SAE-STYLE ADVERSE EVENT REVIEW
+======================================================================
+
+Primary Narrative / Submission Text
+Patient Ms. Kavita Sharma, female, 45 years old, reported severe skin rash and breathing difficulty after taking DrugX for 3 days. She was admitted to City Care Hospital for observation. Case ID: SAE-101. Reporter: Dr. R. Mehta. The event improved after stopping the drug. Follow-up causality assessment is pending.
+
+Previous Version Text
+Patient reported skin rash after taking DrugX. Case ID: SAE-101. Follow-up review is pending.
+
+Duplicate Candidate Documents
+DOC-1::Patient Ms. Kavita Sharma, female, 45 years old, reported severe skin rash and breathing difficulty after taking DrugX for 3 days. She was admitted to City Care Hospital for observation.
+
+DOC-2::Patient Kavita Sharma reported severe rash and breathing difficulty after DrugX and was admitted to City Care Hospital.
+
+DOC-3::Patient reported mild nausea after DrugY and was treated at home.
+
+Structured Form Data
+{
+  "case_id": "SAE-101",
+  "patient_age": "45",
+  "gender": "female",
+  "reporter_name": "Dr. R. Mehta",
+  "suspect_product": "DrugX"
+}
+
+======================================================================
+USE CASE 2: HOSPITALIZATION SUPPORT REVIEW
+======================================================================
+
+Primary Narrative / Submission Text
+Patient Mr. Arun Nair, male, 63 years old, developed chest discomfort, dizziness, and low blood pressure after receiving ProductA. He was hospitalized for monitoring in Sunrise Medical College. Case ID: SAE-102. Reporter: Dr. Neha Jain. The patient was stabilized within 24 hours and discharged with advice for follow-up.
+
+Previous Version Text
+Patient developed dizziness after receiving ProductA. Case ID: SAE-102. Monitoring was advised.
+
+Duplicate Candidate Documents
+DOC-1::Patient developed chest discomfort and dizziness after ProductA and was hospitalized for monitoring.
+
+DOC-2::Patient developed chest discomfort and dizziness after ProductA and was admitted for monitoring.
+
+DOC-3::Patient had headache after ProductB and did not require admission.
+
+Structured Form Data
+{
+  "case_id": "SAE-102",
+  "patient_age": "63",
+  "gender": "male",
+  "reporter_name": "Dr. Neha Jain",
+  "suspect_product": "ProductA"
+}
+
+======================================================================
+USE CASE 3: CLINICAL APPLICATION COMPLETENESS CHECK
+======================================================================
+
+Frontend settings:
+Document Type = application
+Checklist Type = clinical_application
+
+Primary Narrative / Submission Text
+Application ID: CTA-201. Applicant: ABC Pharma Pvt Ltd. Study Title: Phase III clinical study for DrugM in uncontrolled hypertension. Indication: Hypertension. Site Count: 12. Ethics Committee: Approved. The submission includes protocol synopsis, investigator brochure, and insurance summary. However, one checklist annexure is still pending.
+
+Previous Version Text
+Application ID: CTA-201. Applicant: ABC Pharma Pvt Ltd. Study Title: clinical study for DrugM in hypertension. Site Count: 10. Ethics Committee: Under review.
+
+Duplicate Candidate Documents
+DOC-1::Application ID CTA-201 for DrugM in hypertension with 12 sites and ethics approval.
+
+DOC-2::CTA-201 submission for DrugM in uncontrolled hypertension with 12 sites and ethics approval.
+
+Structured Form Data
+{
+  "application_id": "CTA-201",
+  "applicant_name": "ABC Pharma Pvt Ltd",
+  "study_title": "Phase III clinical study for DrugM in uncontrolled hypertension",
+  "indication": "Hypertension",
+  "site_count": "12",
+  "ethics_committee_status": "Approved"
+}
+
+======================================================================
+USE CASE 4: MEETING SUMMARY SYNTHESIS
+======================================================================
+
+Frontend settings:
+Document Type = meeting
+
+Primary Narrative / Submission Text
+The committee reviewed the safety update for DrugQ and discussed two unresolved questions on patient monitoring. Members agreed that the sponsor should submit a revised risk management note within 7 days. The protocol deviation issue was noted but not considered critical. Next meeting will review the revised submission and assign follow-up actions.
+
+Previous Version Text
+The committee reviewed the safety update for DrugQ. Follow-up information from the sponsor was requested.
+
+Duplicate Candidate Documents
+DOC-1::Committee reviewed DrugQ safety update and asked for revised risk management note.
+
+DOC-2::Meeting discussed DrugQ safety and requested revised risk management note within 7 days.
+
+Structured Form Data
+{
+  "case_id": "MTG-301",
+  "reporter_name": "Internal Committee Note",
+  "suspect_product": "DrugQ"
+}
+
+======================================================================
+USE CASE 5: INSPECTION REPORT DRAFT
+======================================================================
+
+Frontend settings:
+Document Type = inspection
+
+Primary Narrative / Submission Text
+During inspection, the team observed missing signatures on two batch records and incomplete equipment cleaning logs. One storage temperature record was not updated for the previous day. Staff stated that corrective action would be submitted within 5 working days. No evidence of product mix-up was found during the visit.
+
+Previous Version Text
+Inspection noted missing signatures on batch records. Corrective action was requested.
+
+Duplicate Candidate Documents
+DOC-1::Inspection observed missing signatures on batch records and incomplete cleaning logs.
+
+DOC-2::Inspection found incomplete cleaning logs and unsigned batch records.
+
+Structured Form Data
+{
+  "application_id": "INS-401",
+  "applicant_name": "XYZ Lifesciences",
+  "study_title": "Routine GMP inspection",
+  "indication": "Manufacturing compliance",
+  "site_count": "1",
+  "ethics_committee_status": "Not Applicable"
+}

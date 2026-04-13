@@ -1,0 +1,14 @@
+[
+  {
+    "document_id": "SAE-001",
+    "text": "Patient Mr. Rajesh Kumar, 58 years old male, was hospitalized after severe adverse reaction to DrugX. Case ID: SAE-001. Reporter: Dr. Meena Shah. Outcome: stabilized after ICU admission at Sunrise Hospital."
+  },
+  {
+    "document_id": "SAE-002",
+    "text": "Patient Mr. Rajesh Kumar, 58 years old male, was hospitalized after severe adverse reaction to DrugX. Case ID: SAE-001. Reporter: Dr. Meena Shah. Outcome: stabilised after ICU admission at Sunrise Hospital."
+  },
+  {
+    "document_id": "SAE-003",
+    "text": "Subject Ms. Anita Verma reported dizziness and rash. Case ID: SAE-003. The patient recovered with outpatient treatment and no hospitalization."
+  }
+]
