@@ -100,12 +100,3 @@ D --> E[Report Generator]
 
 E --> F[Final Regulatory Report PDF]
 
-### ⚙️ System Architecture
-
-app/
- ├── api/           # FastAPI routes
- ├── models/        # schemas
- ├── services/      # NLP modules
- ├── utils/         # helpers
-data/               # datasets
-tests/              # test cases
