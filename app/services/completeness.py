@@ -22,6 +22,68 @@ class CompletenessService:
             "site_count": r"\d+",
             "ethics_committee_status": r".{2,}",
         },
+        "babe_clinical": {
+            "application_id": r"[A-Z0-9-]{4,}",
+            "study_title": r".{10,}",
+            "sponsor_name": r".{2,}",
+            "trial_site": r".{2,}",
+            "drug_name": r".{2,}",
+            "number_of_subjects": r"\d+",
+        },
+        "formulation_rd": {
+            "rd_registration_number": r"[A-Z0-9-]{4,}",
+            "product_category": r".{2,}",
+            "dosage_form": r".{2,}",
+            "research_area": r".{2,}",
+            "number_of_scientists": r"\d+",
+            "gmp_certified": r"(?i)(yes|no|true|false)",
+        },
+        "dual_use_noc": {
+            "consignment_reference_number": r"[A-Z0-9-]{4,}",
+            "item_category": r".{2,}",
+            "item_description": r".{5,}",
+            "quantity": r".{1,}",
+            "end_use_purpose": r".{3,}",
+            "iec_number": r".{3,}",
+        },
+        "cosmetics_registration": {
+            "organization_name": r".{3,}",
+            "brand_name": r".{2,}",
+            "product_name": r".{2,}",
+            "product_type": r".{2,}",
+            "cosmetic_category": r".{2,}",
+            "ingredient_summary": r".{3,}",
+        },
+        "test_license": {
+            "application_id": r"[A-Z0-9-]{4,}",
+            "license_type": r".{2,}",
+            "drug_name": r".{2,}",
+            "test_type": r".{2,}",
+            "quantity_of_sample": r".{1,}",
+            "testing_lab_name": r".{2,}",
+        },
+        "cdtl_registration": {
+            "application_id": r"[A-Z0-9-]{4,}",
+            "application_type": r".{2,}",
+            "lab_name": r".{2,}",
+            "lab_type": r".{2,}",
+            "number_of_technical_staff": r"\d+",
+            "test_capabilities": r".{2,}",
+        },
+    }
+    FIELD_ALIASES = {
+        "rd_registration_number": ["rd_registration_number", "r&d registration number"],
+        "consignment_reference_number": ["consignment_reference_number", "consignment reference number"],
+        "item_category": ["item_category", "item category"],
+        "item_description": ["item_description", "item description"],
+        "end_use_purpose": ["end_use_purpose", "end use purpose"],
+        "iec_number": ["iec_number", "iec number"],
+        "brand_name": ["brand_name", "brand name"],
+        "product_name": ["product_name", "product name"],
+        "cosmetic_category": ["cosmetic_category", "cosmetic category"],
+        "ingredient_summary": ["ingredient_summary", "ingredients_list", "ingredient summary"],
+        "number_of_subjects": ["number_of_subjects", "number of subjects"],
+        "number_of_technical_staff": ["number_of_technical_staff", "number of technical staff"],
     }
 
     def validate(
@@ -37,7 +99,7 @@ class CompletenessService:
         consistency_flags: List[str] = []
 
         for field, pattern in required_fields.items():
-            value = (form_data.get(field) or "").strip()
+            value = self._get_value(form_data, field)
             if not value:
                 inferred_value = self._infer_field(field, extracted_text)
                 if inferred_value:
@@ -49,7 +111,9 @@ class CompletenessService:
                 invalid[field] = f"Value '{value}' does not match expected format"
 
         consistency_flags.extend(self._consistency_checks(form_data, extracted_text, checklist_type))
-        satisfied = len(required_fields) - len(missing) - len(invalid)
+        # Inferred fields help the reviewer, but they should not score the same as
+        # values supplied directly in the structured submission.
+        satisfied = len(required_fields) - len(missing) - len(invalid) - len(inferred)
         score = int((satisfied / len(required_fields)) * 100)
         return ValidateResponse(
             completeness_score=score,
@@ -102,4 +166,21 @@ class CompletenessService:
                 flags.append("Site count submitted in form is not substantiated in the narrative.")
             if form_data.get("ethics_committee_status") and "ethics" not in text.lower():
                 flags.append("Ethics committee status not traceable in supporting text.")
+        if checklist_type == "formulation_rd":
+            if self._get_value(form_data, "gmp_certified") and "gmp" not in text.lower():
+                flags.append("GMP certification claim is not traceable in supporting text.")
+        if checklist_type == "dual_use_noc":
+            if self._get_value(form_data, "controlled_substance_flag") and "controlled" not in text.lower():
+                flags.append("Controlled substance status is not explained in the supporting narrative.")
+        if checklist_type == "cosmetics_registration":
+            if self._get_value(form_data, "label_compliance") and "label" not in text.lower():
+                flags.append("Label compliance declaration is not traceable in supporting text.")
         return flags
+
+    def _get_value(self, form_data: Dict[str, str], field: str) -> str:
+        aliases = self.FIELD_ALIASES.get(field, [field])
+        for alias in aliases:
+            value = str(form_data.get(alias) or "").strip()
+            if value:
+                return value
+        return ""

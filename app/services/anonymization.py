@@ -18,6 +18,26 @@ class AnonymizationService(OptionalDependencyMixin):
         ("NAME", r"\b(?:Mr|Mrs|Ms|Dr)\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}\b"),
         ("NAME", r"\b(?:Patient|Subject)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}\b"),
     ]
+    STRUCTURED_HINTS: Dict[str, str] = {
+        "email": "EMAIL",
+        "mobile": "PHONE",
+        "phone": "PHONE",
+        "contact": "PHONE",
+        "aadhaar": "ID",
+        "license": "ID",
+        "registration": "ID",
+        "address": "ADDRESS",
+        "city": "ADDRESS",
+        "state": "ADDRESS",
+        "hospital": "HOSPITAL",
+        "investigator": "NAME",
+        "reporter": "NAME",
+        "applicant_name": "NAME",
+        "organization_name": "ORG",
+    }
+
+    def __init__(self) -> None:
+        self._spacy_model = self._load_spacy_model()
 
     def anonymize(
         self,
@@ -49,6 +69,9 @@ class AnonymizationService(OptionalDependencyMixin):
                     )
                 )
 
+        matches.extend(self._structured_matches(text, structured_data, pseudonymize, pseudonym_map, occupied))
+        matches.extend(self._spacy_matches(text, pseudonymize, pseudonym_map, occupied))
+
         deidentified_text = self._apply_replacements(text, matches, use_replacements=True)
         anonymized_text = self._apply_replacements(text, matches, use_replacements=False)
         processing_notes = [
@@ -72,6 +95,83 @@ class AnonymizationService(OptionalDependencyMixin):
             compliance_tags=["DPDP_2023", "NDHM", "ICMR", "CDSCO"],
             processing_notes=processing_notes,
         )
+
+    def _structured_matches(
+        self,
+        text: str,
+        structured_data: Dict[str, str],
+        pseudonymize: bool,
+        pseudonym_map: Dict[str, str],
+        occupied: set[int],
+    ) -> List[EntityMatch]:
+        matches: List[EntityMatch] = []
+        lowered_text = text.lower()
+        for key, value in structured_data.items():
+            cleaned = str(value or "").strip()
+            if len(cleaned) < 3:
+                continue
+            label = self._label_for_field(key)
+            if not label:
+                continue
+            start_at = 0
+            while True:
+                index = lowered_text.find(cleaned.lower(), start_at)
+                if index == -1:
+                    break
+                span = set(range(index, index + len(cleaned)))
+                start_at = index + len(cleaned)
+                if occupied.intersection(span):
+                    continue
+                occupied.update(span)
+                replacement = self._replacement(label, cleaned, pseudonymize, pseudonym_map)
+                matches.append(
+                    EntityMatch(
+                        label=label,
+                        value=cleaned,
+                        replacement=replacement,
+                        start=index,
+                        end=index + len(cleaned),
+                    )
+                )
+        return matches
+
+    def _spacy_matches(
+        self,
+        text: str,
+        pseudonymize: bool,
+        pseudonym_map: Dict[str, str],
+        occupied: set[int],
+    ) -> List[EntityMatch]:
+        if self._spacy_model is None:
+            return []
+        matches: List[EntityMatch] = []
+        doc = self._spacy_model(text)
+        label_map = {
+            "PERSON": "NAME",
+            "ORG": "ORG",
+            "GPE": "ADDRESS",
+            "LOC": "ADDRESS",
+            "DATE": "DOB",
+        }
+        for ent in doc.ents:
+            label = label_map.get(ent.label_)
+            if not label or len(ent.text.strip()) < 4:
+                continue
+            span = set(range(ent.start_char, ent.end_char))
+            if occupied.intersection(span):
+                continue
+            occupied.update(span)
+            replacement = self._replacement(label, ent.text, pseudonymize, pseudonym_map)
+            matches.append(
+                EntityMatch(
+                    label=label,
+                    value=ent.text,
+                    replacement=replacement,
+                    start=ent.start_char,
+                    end=ent.end_char,
+                )
+            )
+        return matches
 
     def _apply_replacements(self, text: str, matches: List[EntityMatch], use_replacements: bool) -> str:
         updated = text
@@ -112,3 +212,22 @@ class AnonymizationService(OptionalDependencyMixin):
         alias = f"{label}_{digest}"
         pseudonym_map[value] = alias
         return alias
+
+    def _label_for_field(self, field_name: str) -> str | None:
+        lowered = field_name.lower()
+        for hint, label in self.STRUCTURED_HINTS.items():
+            if hint in lowered:
+                return label
+        return None
+
+    def _load_spacy_model(self):
+        try:
+            import spacy
+        except Exception:
+            return None
+        for model_name in ("en_core_web_sm",):
+            try:
+                return spacy.load(model_name)
+            except Exception:
+                continue
+        return None

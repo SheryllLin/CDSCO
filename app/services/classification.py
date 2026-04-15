@@ -6,9 +6,9 @@ from app.models.schemas import ClassificationScore, ClassifyResponse
 class CaseClassificationService:
     LABEL_KEYWORDS = OrderedDict(
         {
-            "Death": ["death", "fatal", "expired", "deceased"],
-            "Disability": ["disability", "disabled", "impairment", "paralysis"],
-            "Hospitalization": ["hospitalized", "admitted", "icu", "hospitalisation", "hospitalization"],
+            "Death": ["death", "fatal", "expired", "deceased", "mortality"],
+            "Disability": ["disability", "disabled", "impairment", "paralysis", "permanent damage"],
+            "Hospitalization": ["hospitalized", "admitted", "icu", "hospitalisation", "hospitalization", "inpatient"],
             "Other": [],
         }
     )
@@ -26,7 +26,8 @@ class CaseClassificationService:
             if not keywords:
                 raw_scores.append((label, self.LABEL_WEIGHTS[label]))
                 continue
-            score = sum(1 for keyword in keywords if keyword in lowered) * self.LABEL_WEIGHTS[label]
+            score = sum(lowered.count(keyword) for keyword in keywords) * self.LABEL_WEIGHTS[label]
+            score += self._context_bonus(label, lowered)
             raw_scores.append((label, float(score)))
 
         total = sum(score for _, score in raw_scores) or 1.0
@@ -40,5 +41,14 @@ class CaseClassificationService:
         return ClassifyResponse(
             predicted_label=predicted,
             scores=normalized,
-            model_used="keyword-bert-ready-baseline",
+            model_used="hybrid-keyword-context-baseline",
         )
+
+    def _context_bonus(self, label: str, lowered: str) -> float:
+        if label == "Death" and any(term in lowered for term in ["post mortem", "cause of death", "died on"]):
+            return 2.0
+        if label == "Disability" and any(term in lowered for term in ["long-term impairment", "residual disability"]):
+            return 1.2
+        if label == "Hospitalization" and any(term in lowered for term in ["emergency room", "icu stay", "prolonged admission"]):
+            return 1.0
+        return 0.0

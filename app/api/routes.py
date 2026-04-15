@@ -14,6 +14,10 @@ from app.models.schemas import (
     ExportReportRequest,
     GenerateReportRequest,
     GenerateReportResponse,
+    InspectionReportRequest,
+    InspectionReportResponse,
+    OCRRequest,
+    OCRResponse,
     PipelineRequest,
     PipelineResponse,
     SummarizeRequest,
@@ -28,11 +32,13 @@ from app.services.completeness import CompletenessService
 from app.services.deduplication import DuplicateDetectionService
 from app.services.pipeline import RegulatoryPipelineService
 from app.services.pdf_report import PDFReportService
+from app.services.ocr import OCRService
 from app.services.report_generation import ReportGenerationService
 from app.services.summarization import SummarizationService
 
 router = APIRouter()
 
+ocr_service = OCRService()
 anonymizer = AnonymizationService()
 summarizer = SummarizationService()
 validator = CompletenessService()
@@ -42,6 +48,11 @@ comparator = DocumentComparisonService()
 reporter = ReportGenerationService()
 pipeline = RegulatoryPipelineService()
 pdf_reporter = PDFReportService()
+
+
+@router.post("/ocr", response_model=OCRResponse)
+def extract_ocr(request: OCRRequest) -> OCRResponse:
+    return ocr_service.extract(request.text, source_type=request.source_type)
 
 
 @router.post("/anonymize", response_model=AnonymizeResponse)
@@ -94,6 +105,17 @@ def generate_report(request: GenerateReportRequest) -> GenerateReportResponse:
         report_type=request.report_type,
         context=request.context,
     )
+
+
+@router.post("/inspection-report", response_model=InspectionReportResponse)
+def inspection_report(request: InspectionReportRequest) -> InspectionReportResponse:
+    ocr_result = ocr_service.extract(request.text, source_type=request.source_type)
+    report = reporter.generate(
+        ocr_result.extracted_text,
+        report_type="inspection",
+        context=request.context,
+    )
+    return InspectionReportResponse(ocr=ocr_result, report=report)
 
 
 @router.post("/pipeline/run", response_model=PipelineResponse)

@@ -1,414 +1,506 @@
-const samplePayload = {
-  documentType: "sae_case",
-  checklistType: "sae_report",
-  portal: "SUGAM",
-  pseudonymize: false,
-  mainText:
-    "Patient Mr. Rajesh Kumar, male, 58 years old, was admitted to ICU after a fatal adverse reaction to DrugX. Case ID: SAE-001. Reporter: Dr. Meena Shah. Follow-up causality assessment is pending at Sunrise Hospital.",
-  comparisonText:
-    "Patient was admitted after an adverse reaction to DrugX. Case ID: SAE-001. Follow-up review was in progress.",
-  duplicateText:
-    "DOC-1::Patient admitted to ICU after a fatal adverse reaction to DrugX.\n\nDOC-2::Patient admitted to ICU after a fatal adverse reaction to DrugX.\n\nDOC-3::Patient recovered after a mild rash and outpatient observation.",
-  formData: {
-    case_id: "SAE-001",
-    patient_age: "58",
-    gender: "male",
-    reporter_name: "Dr. Meena Shah",
-    suspect_product: "DrugX"
-  }
+import { routes, workflowRouteSet } from "./config/workflows.js";
+import { Dashboard } from "./components/Dashboard.js";
+import { LoginPage } from "./components/LoginPage.js";
+import { WorkflowWizard } from "./components/WorkflowWizard.js";
+import { createStore } from "./state/store.js";
+
+const appRoot = document.getElementById("app");
+const store = createStore();
+
+const WORKFLOW_ANALYSIS_CONFIG = {
+  formulation: { documentType: "application", checklistType: "formulation_rd", portal: "SUGAM" },
+  dual_noc: { documentType: "application", checklistType: "dual_use_noc", portal: "SUGAM" },
+  babe_clinical: { documentType: "application", checklistType: "babe_clinical", portal: "SUGAM" },
+  cosmetics: { documentType: "application", checklistType: "cosmetics_registration", portal: "SUGAM" },
+  test_license: { documentType: "application", checklistType: "test_license", portal: "SUGAM" },
+  cdtl: { documentType: "application", checklistType: "cdtl_registration", portal: "MD Online" }
 };
 
-const ui = {
-  documentType: document.getElementById("document-type"),
-  checklistType: document.getElementById("checklist-type"),
-  portal: document.getElementById("portal"),
-  pseudonymize: document.getElementById("pseudonymize"),
-  mainText: document.getElementById("main-text"),
-  comparisonText: document.getElementById("comparison-text"),
-  duplicateText: document.getElementById("duplicate-text"),
-  formData: document.getElementById("form-data"),
-  runAnalysis: document.getElementById("run-analysis"),
-  downloadReport: document.getElementById("download-report"),
-  statusBanner: document.getElementById("status-banner"),
-  reportTitle: document.getElementById("report-title"),
-  reportPortal: document.getElementById("report-portal"),
-  reportDocument: document.getElementById("report-document"),
-  reportView: document.getElementById("report-view"),
-  anonymizedView: document.getElementById("anonymized-view"),
-  digestView: document.getElementById("digest-view"),
-  validationView: document.getElementById("validation-view"),
-  classificationView: document.getElementById("classification-view"),
-  comparisonView: document.getElementById("comparison-view"),
-  riskPill: document.getElementById("risk-pill"),
-  supportNote: document.getElementById("support-note"),
-  completenessStat: document.getElementById("completeness-stat"),
-  severityStat: document.getElementById("severity-stat"),
-  duplicatesStat: document.getElementById("duplicates-stat"),
-  changesStat: document.getElementById("changes-stat"),
-  completenessMeterLabel: document.getElementById("completeness-meter-label"),
-  completenessMeterFill: document.getElementById("completeness-meter-fill"),
-  loadSample: document.getElementById("load-sample")
-};
+function renderApp() {
+  const pathname = window.location.pathname;
+  const isAuthenticated = store.isAuthenticated();
 
-const severityIds = ["death", "disability", "hospitalization", "other"];
-let latestReportText = "";
-let latestAnalysis = null;
+  if (!isAuthenticated && pathname !== "/") {
+    navigate("/", { replace: true });
+    return;
+  }
 
-function setStatus(message, isError = false) {
-  ui.statusBanner.textContent = message;
-  ui.statusBanner.classList.remove("hidden", "error");
-  if (isError) {
-    ui.statusBanner.classList.add("error");
+  if (isAuthenticated && pathname === "/") {
+    navigate("/dashboard", { replace: true });
+    return;
+  }
+
+  if (pathname === "/") {
+    appRoot.innerHTML = LoginPage();
+    attachLoginPage();
+    return;
+  }
+
+  if (pathname === "/dashboard") {
+    appRoot.innerHTML = Dashboard(routes);
+    attachDashboard();
+    return;
+  }
+
+  if (workflowRouteSet.has(pathname)) {
+    const workflow = routes.find((item) => item.path === pathname);
+    appRoot.innerHTML = WorkflowWizard(workflow, store.getWorkflowState(workflow.key));
+    attachWorkflow(workflow);
+    return;
+  }
+
+  navigate(isAuthenticated ? "/dashboard" : "/", { replace: true });
+}
+
+function navigate(path, { replace = false } = {}) {
+  if (window.location.pathname === path) {
+    renderApp();
+    return;
+  }
+  const action = replace ? "replaceState" : "pushState";
+  window.history[action]({}, "", path);
+  renderApp();
+}
+
+function attachLoginPage() {
+  const form = document.getElementById("login-form");
+  const errorBox = document.getElementById("login-error");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const email = String(formData.get("email") || "").trim();
+    const password = String(formData.get("password") || "").trim();
+    const errors = [];
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.push("Enter a valid email address.");
+    }
+    if (!password || password.length < 6) {
+      errors.push("Password must be at least 6 characters long.");
+    }
+
+    if (errors.length) {
+      errorBox.textContent = errors.join(" ");
+      errorBox.classList.remove("hidden");
+      return;
+    }
+
+    store.login({ email });
+    navigate("/dashboard");
+  });
+}
+
+function attachDashboard() {
+  const logoutButton = document.getElementById("logout-button");
+  const resetAllButton = document.getElementById("reset-all-button");
+  const cards = Array.from(document.querySelectorAll("[data-route]"));
+
+  logoutButton?.addEventListener("click", () => {
+    store.logout();
+    navigate("/", { replace: true });
+  });
+
+  resetAllButton?.addEventListener("click", () => {
+    store.resetAllWorkflows();
+    renderApp();
+  });
+
+  for (const card of cards) {
+    card.addEventListener("click", () => {
+      navigate(card.dataset.route);
+    });
   }
 }
 
-function clearStatus() {
-  ui.statusBanner.classList.add("hidden");
-  ui.statusBanner.classList.remove("error");
-}
+function attachWorkflow(workflow) {
+  const logoutButton = document.getElementById("logout-button");
+  const homeButton = document.getElementById("dashboard-button");
+  const backButton = document.getElementById("stage-back-button");
+  const resetDemoButton = document.getElementById("reset-demo-button");
+  const downloadReportButton = document.getElementById("download-report-button");
+  const form = document.getElementById("workflow-form");
+  const stageOneContainer = document.getElementById("stage-one-fields");
+  const stageTwoContainer = document.getElementById("stage-two-fields");
 
-function loadSample() {
-  ui.documentType.value = samplePayload.documentType;
-  ui.checklistType.value = samplePayload.checklistType;
-  ui.portal.value = samplePayload.portal;
-  ui.pseudonymize.checked = samplePayload.pseudonymize;
-  ui.mainText.value = samplePayload.mainText;
-  ui.comparisonText.value = samplePayload.comparisonText;
-  ui.duplicateText.value = samplePayload.duplicateText;
-  ui.formData.value = JSON.stringify(samplePayload.formData, null, 2);
-  setStatus("Sample case loaded. Click the main analysis button to generate the dashboard and report.");
-}
+  logoutButton?.addEventListener("click", () => {
+    store.logout();
+    navigate("/", { replace: true });
+  });
 
-function parseFormData() {
-  const raw = ui.formData.value.trim();
-  if (!raw) {
-    return {};
-  }
-  return JSON.parse(raw);
-}
+  homeButton?.addEventListener("click", () => {
+    navigate("/dashboard");
+  });
 
-function parseDuplicateDocuments() {
-  const raw = ui.duplicateText.value.trim();
-  if (!raw) {
-    return [];
-  }
-  return raw
-    .split(/\n\s*\n/)
-    .map((block, index) => {
-      const [first, ...rest] = block.split("::");
-      if (rest.length === 0) {
-        return { document_id: `DOC-${index + 1}`, text: block.trim() };
+  resetDemoButton?.addEventListener("click", () => {
+    store.resetWorkflowState(workflow.key);
+    renderApp();
+  });
+
+  backButton?.addEventListener("click", () => {
+    store.updateWorkflowState(workflow.key, { step: 1, errors: {} });
+    renderApp();
+  });
+
+  downloadReportButton?.addEventListener("click", () => {
+    downloadWorkflowReport(workflow).catch(() => {
+      const workflowState = store.getWorkflowState(workflow.key);
+      store.updateWorkflowState(workflow.key, {
+        submissionError: "The PDF report could not be downloaded right now. Please try again."
+      });
+      if (workflowState.submitted) {
+        renderApp();
       }
-      return { document_id: first.trim(), text: rest.join("::").trim() };
-    })
-    .filter((item) => item.text);
+    });
+  });
+
+  stageOneContainer?.addEventListener("change", handleStageOneFileChange(workflow));
+  stageOneContainer?.addEventListener("input", clearErrorOnInput(workflow));
+  stageTwoContainer?.addEventListener("input", clearErrorOnInput(workflow));
+  stageTwoContainer?.addEventListener("change", clearErrorOnInput(workflow));
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const workflowState = store.getWorkflowState(workflow.key);
+    const formData = new FormData(form);
+
+    if (workflowState.step === 1) {
+      const nextStageOne = extractStageOneData(formData, workflowState.stageOne);
+      const errors = validateStageOne(nextStageOne);
+      store.updateWorkflowState(workflow.key, { stageOne: nextStageOne, errors });
+
+      if (Object.keys(errors).length) {
+        renderApp();
+        return;
+      }
+
+      store.updateWorkflowState(workflow.key, { step: 2, errors: {} });
+      renderApp();
+      return;
+    }
+
+    const nextStageTwo = extractStageTwoData(formData, workflow.stageTwoFields, workflowState.stageTwo);
+    const errors = validateStageTwo(nextStageTwo, workflow.stageTwoFields);
+    store.updateWorkflowState(workflow.key, { stageTwo: nextStageTwo, errors });
+
+    if (Object.keys(errors).length) {
+      renderApp();
+      return;
+    }
+
+    store.updateWorkflowState(workflow.key, {
+      submitting: true,
+      submissionError: "",
+      analysis: null
+    });
+    renderApp();
+
+    const submittedAt = new Date().toISOString();
+
+    try {
+      const analysis = await submitWorkflowForAnalysis(workflow, {
+        ...workflowState,
+        stageTwo: nextStageTwo,
+        submittedAt
+      });
+
+      store.updateWorkflowState(workflow.key, {
+        errors: {},
+        submitted: true,
+        submittedAt,
+        submitting: false,
+        submissionError: "",
+        analysis
+      });
+    } catch (error) {
+      store.updateWorkflowState(workflow.key, {
+        submitted: false,
+        submittedAt: null,
+        submitting: false,
+        submissionError: error instanceof Error ? error.message : "The submission analysis failed.",
+        analysis: null
+      });
+    }
+
+    renderApp();
+  });
 }
 
-function buildPipelinePayload() {
+async function submitWorkflowForAnalysis(workflow, workflowState) {
+  const payload = buildPipelineRequest(workflow, workflowState);
+  const response = await fetch("/pipeline/run", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error("The submission was saved, but the analysis service could not complete the report.");
+  }
+
+  return response.json();
+}
+
+async function downloadWorkflowReport(workflow) {
+  const workflowState = store.getWorkflowState(workflow.key);
+  if (!workflowState.analysis) {
+    throw new Error("No analysis is available for download.");
+  }
+
+  const config = getWorkflowAnalysisConfig(workflow.key);
+  const response = await fetch("/export-report", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      analysis: workflowState.analysis,
+      portal: config.portal,
+      document_type: config.documentType,
+      generated_by: workflowState.stageOne.username || "CDSCO Portal User"
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to export the analysis report.");
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${workflow.key}_analysis_report.pdf`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+function getWorkflowAnalysisConfig(workflowKey) {
+  return WORKFLOW_ANALYSIS_CONFIG[workflowKey] || {
+    documentType: "application",
+    checklistType: "clinical_application",
+    portal: "SUGAM"
+  };
+}
+
+function buildPipelineRequest(workflow, workflowState) {
+  const config = getWorkflowAnalysisConfig(workflow.key);
+  const formData = normalizeFormData({
+    ...workflowState.stageOne,
+    ...workflowState.stageTwo
+  });
+
   return {
-    text: ui.mainText.value.trim(),
-    form_data: parseFormData(),
-    comparison_text: ui.comparisonText.value.trim() || null,
-    documents: parseDuplicateDocuments(),
-    pseudonymize: ui.pseudonymize.checked,
-    document_type: ui.documentType.value,
-    checklist_type: ui.checklistType.value,
+    text: buildSubmissionNarrative(workflow, workflowState),
+    form_data: formData,
+    pseudonymize: String(formData.anonymization_required || "").toLowerCase() === "true",
+    document_type: config.documentType,
+    checklist_type: config.checklistType,
+    source_type: "typed",
     metadata: {
-      portal: ui.portal.value,
-      submission_id: `${ui.portal.value.replace(/\s+/g, "-").toUpperCase()}-AUTO-001`
+      portal: config.portal,
+      submission_id: formData.application_id || formData.username || workflow.key,
+      workflow_type: workflow.title,
+      applicant_name:
+        formData.applicant_name ||
+        [formData.first_name, formData.middle_name, formData.last_name].filter(Boolean).join(" ") ||
+        formData.organization_name ||
+        workflow.title
     }
   };
 }
 
-async function postJson(url, payload) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    const detail = data.detail || "Request failed";
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+function normalizeFormData(values) {
+  return Object.fromEntries(
+    Object.entries(values)
+      .filter(([, value]) => value !== null && value !== undefined)
+      .map(([key, value]) => [key, typeof value === "boolean" ? String(value) : String(value)])
+  );
+}
+
+function buildSubmissionNarrative(workflow, workflowState) {
+  const stageOneKeys = [
+    "organization_name",
+    "organization_type",
+    "designation",
+    "city",
+    "state",
+    "country",
+    "applicant_type"
+  ];
+  const stageTwoKeys = workflow.stageTwoFields.map((field) => field.name);
+  const sections = [
+    `${workflow.title} application submission for portal review.`,
+    "Applicant profile:",
+    ...stageOneKeys
+      .filter((key) => workflowState.stageOne[key])
+      .map((key) => `${humanizeFieldName(key)}: ${formatNarrativeValue(workflowState.stageOne[key])}`),
+    "Stage 2 submission details:",
+    ...stageTwoKeys
+      .filter((key) => workflowState.stageTwo[key] !== null && workflowState.stageTwo[key] !== undefined && workflowState.stageTwo[key] !== "")
+      .map((key) => `${humanizeFieldName(key)}: ${formatNarrativeValue(workflowState.stageTwo[key])}`),
+    workflowState.submittedAt ? `Submission timestamp: ${workflowState.submittedAt}` : ""
+  ];
+
+  return sections.filter(Boolean).join("\n");
+}
+
+function humanizeFieldName(name) {
+  return String(name)
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatNarrativeValue(value) {
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  if (value === null || value === undefined || value === "") {
+    return "Not provided";
+  }
+  return String(value);
+}
+
+function clearErrorOnInput(workflow) {
+  return (event) => {
+    const workflowState = store.getWorkflowState(workflow.key);
+    const fieldName = event.target.name;
+    if (!fieldName || !workflowState.errors[fieldName]) {
+      return;
+    }
+    const nextErrors = { ...workflowState.errors };
+    delete nextErrors[fieldName];
+    store.updateWorkflowState(workflow.key, { errors: nextErrors });
+  };
+}
+
+function handleStageOneFileChange(workflow) {
+  return (event) => {
+    const { target } = event;
+    if (target.type !== "file" || !target.name) {
+      return;
+    }
+    const workflowState = store.getWorkflowState(workflow.key);
+    const fileName = target.files?.[0]?.name || "";
+    store.updateWorkflowState(workflow.key, {
+      stageOne: {
+        ...workflowState.stageOne,
+        [target.name]: fileName
+      }
+    });
+  };
+}
+
+function extractStageOneData(formData, previousData) {
+  const data = { ...previousData };
+  for (const [key, value] of formData.entries()) {
+    if (key.endsWith("_upload")) {
+      continue;
+    }
+    data[key] = typeof value === "string" ? value.trim() : value;
+  }
+
+  const checkboxNames = ["sms_alert", "terms_accepted"];
+  for (const name of checkboxNames) {
+    data[name] = formData.get(name) === "on";
   }
   return data;
 }
 
-function escapeHtml(text) {
-  return String(text)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-function titleCase(value) {
-  return value
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function renderList(element, items, emptyText) {
-  if (!items || items.length === 0) {
-    element.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
-    return;
-  }
-  element.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-}
-
-function formatValidation(validation) {
-  const missing = validation.missing_fields?.length
-    ? validation.missing_fields.map((item) => titleCase(item)).join(", ")
-    : "None";
-  const invalid = Object.keys(validation.invalid_fields || {}).length
-    ? Object.entries(validation.invalid_fields)
-        .map(([field, issue]) => `${titleCase(field)}: ${issue}`)
-        .join("<br />")
-    : "None";
-  const flags = validation.consistency_flags?.length
-    ? validation.consistency_flags.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
-    : "<li>No consistency flags detected.</li>";
-
-  ui.validationView.innerHTML = `
-    <p><strong>Checklist:</strong> ${escapeHtml(titleCase(validation.checklist_type))}</p>
-    <p><strong>Missing fields:</strong> ${escapeHtml(missing)}</p>
-    <p><strong>Invalid fields:</strong><br />${invalid}</p>
-    <p><strong>Consistency review:</strong></p>
-    <ul class="compact-list">${flags}</ul>
-  `;
-}
-
-function formatClassification(classification) {
-  const scores = classification.scores
-    .map(
-      (item) =>
-        `<li><strong>${escapeHtml(item.label)}</strong> support score: ${escapeHtml((item.score * 100).toFixed(1))}%</li>`
-    )
-    .join("");
-
-  ui.classificationView.innerHTML = `
-    <p><strong>Suggested severity signal:</strong> ${escapeHtml(classification.predicted_label)}</p>
-    <p><strong>Support scores:</strong></p>
-    <ul class="compact-list">${scores}</ul>
-  `;
-}
-
-function formatComparison(data) {
-  const duplicates = data.deduplication?.duplicates?.length
-    ? data.deduplication.duplicates
-        .map(
-          (item) =>
-            `<li>${escapeHtml(item.document_id_a)} and ${escapeHtml(item.document_id_b)} may be related (${escapeHtml(item.duplicate_type)}, similarity ${escapeHtml(item.similarity)})</li>`
-        )
-        .join("")
-    : "<li>No potential duplicates detected.</li>";
-
-  const changeBlock = data.comparison
-    ? `
-      <p><strong>Version differences:</strong></p>
-      <ul class="compact-list">
-        <li>Added segments: ${escapeHtml(data.comparison.change_summary.added_count)}</li>
-        <li>Removed segments: ${escapeHtml(data.comparison.change_summary.removed_count)}</li>
-        <li>Modified segments: ${escapeHtml(data.comparison.change_summary.modified_count)}</li>
-      </ul>
-    `
-    : "<p><strong>Version differences:</strong> No comparison text submitted.</p>";
-
-  ui.comparisonView.innerHTML = `
-    <p><strong>Potential duplicates:</strong></p>
-    <ul class="compact-list">${duplicates}</ul>
-    ${changeBlock}
-  `;
-}
-
-function createSection(title, items) {
-  const listItems = items.length
-    ? items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
-    : "<li>No items available.</li>";
-  return `
-    <section class="report-section">
-      <h4>${escapeHtml(title)}</h4>
-      <ul>${listItems}</ul>
-    </section>
-  `;
-}
-
-function buildReportMarkup(report, data) {
-  const completeness = data.validation?.completeness_score ?? 0;
-  const duplicates = data.deduplication?.duplicates?.length ?? 0;
-  const changes = data.comparison
-    ? data.comparison.change_summary.added_count +
-      data.comparison.change_summary.removed_count +
-      data.comparison.change_summary.modified_count
-    : 0;
-
-  return `
-    <div class="report-highlight">
-      <div class="highlight-box">
-        <span class="stat-label">Completeness</span>
-        <strong>${escapeHtml(completeness)}/100</strong>
-      </div>
-      <div class="highlight-box">
-        <span class="stat-label">Potential Duplicates</span>
-        <strong>${escapeHtml(duplicates)}</strong>
-      </div>
-      <div class="highlight-box">
-        <span class="stat-label">Version Change Count</span>
-        <strong>${escapeHtml(changes)}</strong>
-      </div>
-    </div>
-    ${createSection("Summary", report.summary)}
-    ${createSection("Observations", report.observations)}
-    ${createSection("Reviewer Attention Points", report.violations)}
-    ${createSection("Recommendations", report.recommendations)}
-    ${createSection("Next Actions", report.next_actions)}
-  `;
-}
-
-function formatReportText(report, data) {
-  const completeness = data.validation?.completeness_score ?? 0;
-  const duplicates = data.deduplication?.duplicates?.length ?? 0;
-  const changes = data.comparison
-    ? data.comparison.change_summary.added_count +
-      data.comparison.change_summary.removed_count +
-      data.comparison.change_summary.modified_count
-    : 0;
-
-  return [
-    report.title,
-    "",
-    `Risk level: ${report.risk_level.toUpperCase()}`,
-    `Completeness: ${completeness}/100`,
-    `Potential duplicates: ${duplicates}`,
-    `Version change count: ${changes}`,
-    "",
-    "Summary:",
-    ...report.summary.map((item, index) => `${index + 1}. ${item}`),
-    "",
-    "Observations:",
-    ...report.observations.map((item, index) => `${index + 1}. ${item}`),
-    "",
-    "Reviewer Attention Points:",
-    ...report.violations.map((item, index) => `${index + 1}. ${item}`),
-    "",
-    "Recommendations:",
-    ...report.recommendations.map((item, index) => `${index + 1}. ${item}`),
-    "",
-    "Next Actions:",
-    ...report.next_actions.map((item, index) => `${index + 1}. ${item}`)
-  ].join("\n");
-}
-
-function applyRiskPill(level) {
-  ui.riskPill.className = `pill ${level || "neutral"}`;
-  ui.riskPill.textContent = level ? `${level} reviewer attention` : "Awaiting run";
-}
-
-function updateDashboardStats(data) {
-  const completeness = data.validation?.completeness_score ?? 0;
-  const duplicates = data.deduplication?.duplicates?.length ?? 0;
-  const changes = data.comparison
-    ? data.comparison.change_summary.added_count +
-      data.comparison.change_summary.removed_count +
-      data.comparison.change_summary.modified_count
-    : 0;
-
-  ui.completenessStat.textContent = `${completeness}/100`;
-  ui.severityStat.textContent = data.classification?.predicted_label || "--";
-  ui.duplicatesStat.textContent = String(duplicates);
-  ui.changesStat.textContent = String(changes);
-  ui.completenessMeterLabel.textContent = `${completeness}%`;
-  ui.completenessMeterFill.style.width = `${Math.max(0, Math.min(completeness, 100))}%`;
-}
-
-function updateSeverityBars(classification) {
-  const map = {};
-  for (const score of classification.scores || []) {
-    map[score.label.toLowerCase()] = Math.round(score.score * 100);
-  }
-  for (const key of severityIds) {
-    const value = map[key] || 0;
-    const bar = document.getElementById(`bar-${key}`);
-    const label = document.getElementById(`label-${key}`);
-    if (bar) {
-      bar.style.width = `${value}%`;
+function extractStageTwoData(formData, fields, previousData) {
+  const data = { ...previousData };
+  for (const field of fields) {
+    if (field.type === "checkbox") {
+      data[field.name] = formData.get(field.name) === "True" ? "True" : "False";
+      continue;
     }
-    if (label) {
-      label.textContent = `${value}%`;
+    const value = formData.get(field.name);
+    data[field.name] = typeof value === "string" ? value.trim() : "";
+  }
+  return data;
+}
+
+function validateStageOne(data) {
+  const errors = {};
+  const requiredFields = [
+    "applicant_type",
+    "username",
+    "password",
+    "confirm_password",
+    "first_name",
+    "last_name",
+    "mobile_number",
+    "gender",
+    "nationality",
+    "id_proof_type",
+    "id_proof_number",
+    "designation",
+    "organization_name",
+    "organization_type",
+    "address_line_1",
+    "country",
+    "state",
+    "district",
+    "city",
+    "pincode",
+    "contact_number",
+    "captcha"
+  ];
+
+  for (const field of requiredFields) {
+    if (!data[field]) {
+      errors[field] = "This field is required.";
     }
   }
-}
 
-function renderPipeline(data) {
-  const report = data.report.report;
-  latestAnalysis = data;
-  latestReportText = formatReportText(report, data);
-  ui.reportTitle.textContent = report.title;
-  ui.reportPortal.textContent = `Portal: ${ui.portal.value}`;
-  ui.reportDocument.textContent = `Type: ${titleCase(ui.documentType.value)}`;
-  ui.reportView.innerHTML = buildReportMarkup(report, data);
-  ui.anonymizedView.textContent = data.anonymization.anonymized_text || "No anonymized text returned.";
-  renderList(ui.digestView, data.summary.reviewer_digest, "No reviewer digest available.");
-  formatValidation(data.validation);
-  formatClassification(data.classification);
-  formatComparison(data);
-  updateDashboardStats(data);
-  updateSeverityBars(data.classification);
-  applyRiskPill(report.risk_level);
-  ui.supportNote.textContent =
-    "This is a reviewer support dashboard. Suggested severity, duplicate, and compliance signals should assist human review, not replace it.";
-  ui.downloadReport.disabled = false;
-}
-
-function downloadReport() {
-  if (!latestAnalysis) {
-    return;
+  if (data.username && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.username)) {
+    errors.username = "Enter a valid email address.";
   }
-  exportReportPdf().catch((error) => setStatus(error.message, true));
-}
-
-async function exportReportPdf() {
-  setStatus("Preparing styled PDF report for download.");
-  const response = await fetch("/export-report", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      analysis: latestAnalysis,
-      portal: ui.portal.value,
-      document_type: ui.documentType.value,
-      generated_by: "Regulatory Workflow Automation Dashboard"
-    })
-  });
-  if (!response.ok) {
-    throw new Error("Could not generate PDF report.");
+  if (data.alternate_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.alternate_email)) {
+    errors.alternate_email = "Enter a valid alternate email.";
   }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `regulatory-report-${ui.documentType.value}.pdf`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-  setStatus("PDF report downloaded successfully.");
+  if (data.password && data.password.length < 6) {
+    errors.password = "Password must be at least 6 characters long.";
+  }
+  if (data.password !== data.confirm_password) {
+    errors.confirm_password = "Passwords do not match.";
+  }
+  if (data.mobile_number && !/^\d{10,15}$/.test(data.mobile_number.replace(/\D/g, ""))) {
+    errors.mobile_number = "Enter a valid mobile number.";
+  }
+  if (data.pincode && !/^\d{5,10}$/.test(data.pincode)) {
+    errors.pincode = "Enter a valid pincode.";
+  }
+  if (String(data.captcha || "").trim().toUpperCase() !== "CDSCO") {
+    errors.captcha = "Enter the displayed CAPTCHA text.";
+  }
+  if (!data.id_proof_upload) {
+    errors.id_proof_upload = "Upload the ID proof file.";
+  }
+  if (!data.undertaking_upload) {
+    errors.undertaking_upload = "Upload the undertaking PDF.";
+  }
+  if (!data.address_proof_upload) {
+    errors.address_proof_upload = "Upload the address proof.";
+  }
+  if (!data.terms_accepted) {
+    errors.terms_accepted = "You must accept the terms and conditions.";
+  }
+  return errors;
 }
 
-async function runAnalysis() {
-  try {
-    clearStatus();
-    setStatus("Running the full analysis and generating the formatted report.");
-    const payload = buildPipelinePayload();
-    if (!payload.text) {
-      throw new Error("Primary narrative text is required.");
+function validateStageTwo(data, fields) {
+  const errors = {};
+  for (const field of fields) {
+    if (field.required !== false && !data[field.name]) {
+      errors[field.name] = "This field is required.";
     }
-    const data = await postJson("/pipeline/run", payload);
-    renderPipeline(data);
-    setStatus("Analysis completed. The dashboard and formatted report have been updated.");
-  } catch (error) {
-    setStatus(error.message, true);
   }
+  return errors;
 }
 
-ui.runAnalysis.addEventListener("click", runAnalysis);
-ui.downloadReport.addEventListener("click", downloadReport);
-ui.loadSample.addEventListener("click", loadSample);
-
-loadSample();
+window.addEventListener("popstate", renderApp);
+renderApp();

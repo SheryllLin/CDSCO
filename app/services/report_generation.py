@@ -137,10 +137,10 @@ class ReportGenerationService:
         return GenerateReportResponse(
             report=GeneratedReport(
                 title=f"{title_prefix}Regulatory Evaluation Review Report",
-                summary=summary_points[:5],
-                observations=self._dedupe(observations)[:6],
-                violations=violations[:6],
-                recommendations=self._dedupe(recommendations)[:6],
+                summary=self._compress_items(summary_points, 4),
+                observations=self._compress_items(self._dedupe(observations), 4),
+                violations=self._compress_items(violations, 4),
+                recommendations=self._compress_items(self._dedupe(recommendations), 4),
                 next_actions=next_actions,
                 risk_level=risk_level,
             ),
@@ -215,3 +215,15 @@ class ReportGenerationService:
                 seen.add(item)
                 result.append(item)
         return result
+
+    def _compress_items(self, items: List[str], limit: int) -> List[str]:
+        compressed: List[str] = []
+        for item in items:
+            text = " ".join(str(item).split())
+            if len(text) > 160:
+                text = text[:157].rsplit(" ", 1)[0].rstrip(" ,;:") + "..."
+            if text and text not in compressed:
+                compressed.append(text)
+            if len(compressed) >= limit:
+                break
+        return compressed

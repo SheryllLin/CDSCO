@@ -22,3 +22,8 @@ def root() -> FileResponse:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "version": settings.version}
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def spa_fallback(full_path: str) -> FileResponse:
+    return FileResponse(static_dir / "index.html")

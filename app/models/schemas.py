@@ -7,6 +7,7 @@ class PortalMetadata(BaseModel):
     portal: Optional[str] = Field(default=None, description="SUGAM or MD Online")
     submission_id: Optional[str] = None
     applicant_name: Optional[str] = None
+    workflow_type: Optional[str] = None
 
 
 class AnonymizeRequest(BaseModel):
@@ -148,6 +149,44 @@ class GenerateReportResponse(BaseModel):
     generation_mode: str
 
 
+class OCRRequest(BaseModel):
+    text: str
+    source_type: str = "typed"
+
+
+class OCRResponse(BaseModel):
+    extracted_text: str
+    source_type: str
+    engine_used: str
+    confidence_note: str
+    preprocessing_steps: List[str]
+
+
+class PortalPayload(BaseModel):
+    portal: str
+    submission_id: str
+    payload: Dict[str, Any]
+    checklist_type: str
+    document_type: str
+
+
+class PortalIntegrationResponse(BaseModel):
+    payloads: List[PortalPayload]
+    integration_mode: str
+    recommendations: List[str]
+
+
+class InspectionReportRequest(BaseModel):
+    text: str
+    source_type: str = "typed"
+    context: Dict[str, Any] = Field(default_factory=dict)
+
+
+class InspectionReportResponse(BaseModel):
+    ocr: OCRResponse
+    report: GenerateReportResponse
+
+
 class PipelineRequest(BaseModel):
     text: str
     form_data: Dict[str, str] = Field(default_factory=dict)
@@ -157,9 +196,11 @@ class PipelineRequest(BaseModel):
     document_type: str = "sae_case"
     checklist_type: str = "sae_report"
     metadata: Optional[PortalMetadata] = None
+    source_type: str = "typed"
 
 
 class PipelineResponse(BaseModel):
+    ocr: OCRResponse
     anonymization: AnonymizeResponse
     summary: SummarizeResponse
     validation: ValidateResponse
@@ -167,6 +208,7 @@ class PipelineResponse(BaseModel):
     deduplication: DeduplicateResponse
     comparison: Optional[CompareResponse]
     report: GenerateReportResponse
+    portal_integration: PortalIntegrationResponse
 
 
 class ExportReportRequest(BaseModel):

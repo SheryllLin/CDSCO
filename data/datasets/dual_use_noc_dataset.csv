@@ -1,0 +1,26 @@
+NOC Zone,Consignment Reference Number,Item Category,Item Description,Quantity,Unit,End Use Purpose,Destination Zone Office,Port of Entry,IEC Number,Hazardous Classification,Controlled Substance Flag,Storage Temperature,End User Certificate Uploaded
+West Zone,CRN00123,Pharmaceutical API,Paracetamol Powder,500,kg,Manufacturing,Mumbai Zone,Nhava Sheva,IEC12345,Non-Hazardous,No,25C,Yes
+North Zone,,Chemical Reagent,Sodium Azide,50,kg,Laboratory Use,Delhi Zone,IGI Airport,IEC54321,Hazardous,Yes,,
+South Zone,CRN00125,Biological Sample,Blood Plasma,100,L,Research,Chennai Zone,Chennai Port,IEC98765,Non-Hazardous,No,2-8C,Yes
+East Zone,CRN00126,Medical Device,Syringe Disposable,10000,units,Hospital Supply,Kolkata Zone,Kolkata Port,IEC11223,Non-Hazardous,No,,Yes
+West Zone,CRN00127,Chemical Solvent,Methanol,0,L,Industrial Use,Mumbai Zone,Nhava Sheva,IEC44556,Hazardous,Yes,15C,No
+North Zone,CRN00128,Pharmaceutical API,Ibuprofen,250,kg,Drug Formulation,Delhi Zone,IGI Airport,IEC99887,Non-Hazardous,No,25C,Yes
+South Zone,,Biotech Material,Enzyme X,75,kg,Research,Bangalore Zone,Bangalore Airport,IEC77665,Non-Hazardous,No,,No
+East Zone,CRN00130,Chemical Compound,Acetone,-1,L,Industrial Use,Kolkata Zone,Kolkata Port,IEC33445,Hazardous,Yes,20C,Yes
+West Zone,CRN00131,Medical Equipment,X-Ray Tubes,10,units,Diagnostics,Mumbai Zone,Nhava Sheva,IEC55667,Non-Hazardous,No,,Yes
+North Zone,CRN00132,Controlled Drug,Morphine,5,kg,Medical Use,Delhi Zone,IGI Airport,IEC88990,Hazardous,Yes,2-8C,Yes
+South Zone,CRN00133,Pharmaceutical API,Amoxicillin,300,kg,Manufacturing,Chennai Zone,Chennai Port,IEC66778,Non-Hazardous,No,25C,Yes
+East Zone,,Chemical Reagent,Hydrochloric Acid,200,L,Laboratory Use,Kolkata Zone,Kolkata Port,IEC22334,Hazardous,No,20C,No
+West Zone,CRN00135,Biological Sample,Serum Samples,150,L,Research,Mumbai Zone,Nhava Sheva,IEC99881,Non-Hazardous,No,2-8C,Yes
+North Zone,CRN00136,Medical Device,Gloves Latex,20000,units,Hospital Use,Delhi Zone,IGI Airport,IEC77889,Non-Hazardous,No,,Yes
+South Zone,CRN00137,Chemical Solvent,Ethanol,500,L,Industrial Use,Chennai Zone,Chennai Port,IEC11229,Hazardous,No,15C,No
+East Zone,CRN00138,Pharmaceutical API,Metformin,400,kg,Drug Manufacturing,Kolkata Zone,Kolkata Port,IEC55661,Non-Hazardous,No,25C,Yes
+West Zone,,Controlled Chemical,Potassium Cyanide,20,kg,Industrial Use,Mumbai Zone,Nhava Sheva,IEC33449,Hazardous,Yes,,No
+North Zone,CRN00140,Biotech Material,DNA Kit,60,units,Research,Delhi Zone,IGI Airport,IEC77660,Non-Hazardous,No,4C,Yes
+South Zone,CRN00141,Medical Equipment,ECG Machine,5,units,Diagnostics,Bangalore Zone,Bangalore Airport,IEC99883,Non-Hazardous,No,,Yes
+East Zone,CRN00142,Chemical Compound,Benzene,100,L,Industrial Use,Kolkata Zone,Kolkata Port,IEC11221,Hazardous,Yes,20C,No
+West Zone,CRN00143,Pharmaceutical API,Aspirin,350,kg,Manufacturing,Mumbai Zone,Nhava Sheva,IEC44550,Non-Hazardous,No,25C,Yes
+North Zone,,Biological Sample,Tissue Samples,80,L,Research,Delhi Zone,IGI Airport,IEC22339,Non-Hazardous,No,,No
+South Zone,CRN00145,Chemical Reagent,Silver Nitrate,30,kg,Laboratory Use,Chennai Zone,Chennai Port,IEC55669,Hazardous,No,20C,Yes
+East Zone,CRN00146,Medical Device,Infusion Pump,8,units,Hospital Use,Kolkata Zone,Kolkata Port,IEC77880,Non-Hazardous,No,,Yes
+West Zone,CRN00147,Controlled Drug,Fentanyl,2,kg,Medical Use,Mumbai Zone,Nhava Sheva,IEC88991,Hazardous,Yes,2-8C,Yes

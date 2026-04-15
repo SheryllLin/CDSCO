@@ -1,0 +1,81 @@
+{
+  "model_used": "TF-IDF + Logistic Regression",
+  "accuracy": 1.0,
+  "train_size": 120,
+  "test_size": 30,
+  "labels": [
+    "BA/BE Clinical Trials",
+    "Cosmetics Registration",
+    "Dual Use NOC",
+    "Formulation and R&D",
+    "Registration of CDTL",
+    "Test License"
+  ],
+  "class_distribution": {
+    "Formulation and R&D": 25,
+    "Dual Use NOC": 25,
+    "BA/BE Clinical Trials": 25,
+    "Cosmetics Registration": 25,
+    "Test License": 25,
+    "Registration of CDTL": 25
+  },
+  "classification_report": {
+    "BA/BE Clinical Trials": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Cosmetics Registration": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Dual Use NOC": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Formulation and R&D": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Registration of CDTL": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Test License": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 30.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 30.0
+    }
+  },
+  "dataset_files": {
+    "Formulation and R&D": "data/datasets/formulation_rd_dataset.csv",
+    "Dual Use NOC": "data/datasets/dual_use_noc_dataset.csv",
+    "BA/BE Clinical Trials": "data/datasets/BA_BE_clinical_trials_dataset.csv",
+    "Cosmetics Registration": "data/datasets/cosmetic_dataset.csv",
+    "Test License": "data/datasets/stage2_test_license.csv",
+    "Registration of CDTL": "data/datasets/cdtl_registration_dataset.csv"
+  }
+}

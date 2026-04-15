@@ -10,12 +10,15 @@ from app.services.classification import CaseClassificationService
 from app.services.comparison import DocumentComparisonService
 from app.services.completeness import CompletenessService
 from app.services.deduplication import DuplicateDetectionService
+from app.services.ocr import OCRService
+from app.services.portal_integration import PortalIntegrationService
 from app.services.report_generation import ReportGenerationService
 from app.services.summarization import SummarizationService
 
 
 class RegulatoryPipelineService:
     def __init__(self) -> None:
+        self.ocr = OCRService()
         self.anonymizer = AnonymizationService()
         self.summarizer = SummarizationService()
         self.validator = CompletenessService()
@@ -23,10 +26,12 @@ class RegulatoryPipelineService:
         self.deduplicator = DuplicateDetectionService()
         self.comparator = DocumentComparisonService()
         self.reporter = ReportGenerationService()
+        self.portal_integration = PortalIntegrationService()
 
     def run(self, request: PipelineRequest) -> PipelineResponse:
+        ocr_output = self.ocr.extract(request.text, source_type=request.source_type)
         anonymized = self.anonymizer.anonymize(
-            request.text,
+            ocr_output.extracted_text,
             pseudonymize=request.pseudonymize,
             structured_data=request.form_data,
         )
@@ -64,7 +69,14 @@ class RegulatoryPipelineService:
                 "checklist_type": request.checklist_type,
                 },
         )
+        portal_payloads = self.portal_integration.prepare(
+            form_data=request.form_data,
+            document_type=request.document_type,
+            checklist_type=request.checklist_type,
+            metadata=request.metadata,
+        )
         return PipelineResponse(
+            ocr=ocr_output,
             anonymization=anonymized,
             summary=summary,
             validation=validation,
@@ -72,4 +84,5 @@ class RegulatoryPipelineService:
             deduplication=deduplication,
             comparison=comparison,
             report=report,
+            portal_integration=portal_payloads,
         )

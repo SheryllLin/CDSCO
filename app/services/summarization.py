@@ -36,6 +36,7 @@ class SummarizationService(OptionalDependencyMixin):
 
     def __init__(self) -> None:
         self.settings = get_settings()
+        self._transformer = self._load_transformer_pipeline()
 
     def summarize(
         self,
@@ -47,10 +48,16 @@ class SummarizationService(OptionalDependencyMixin):
         chunks = chunk_text(text, limit) or [text]
         chunk_summaries = [self._summarize_chunk(chunk, document_type) for chunk in chunks]
         merged = self._merge(chunk_summaries)
+        model_used = "hybrid-extractive-mapreduce"
+        if self._transformer is not None and text.strip():
+            abstractive = self._abstractive_hint(text)
+            if abstractive:
+                merged.important_notes = self._flatten([merged.important_notes, [abstractive]])
+                model_used = "hybrid-extractive-mapreduce+transformer-fallback"
         return SummarizeResponse(
             summary=merged,
             chunks_processed=len(chunks),
-            model_used="hybrid-extractive-mapreduce",
+            model_used=model_used,
             document_type=document_type,
             reviewer_digest=self._reviewer_digest(merged, document_type),
         )
@@ -108,3 +115,26 @@ class SummarizationService(OptionalDependencyMixin):
         if summary.important_notes:
             digest.append(f"Follow-up note: {summary.important_notes[0]}")
         return digest[:4]
+
+    def _load_transformer_pipeline(self):
+        try:
+            from transformers import pipeline
+        except Exception:
+            return None
+        try:
+            return pipeline("summarization", model="sshleifer/distilbart-cnn-12-6", local_files_only=True)
+        except Exception:
+            return None
+
+    def _abstractive_hint(self, text: str) -> str | None:
+        if self._transformer is None:
+            return None
+        snippet = text[:1200]
+        try:
+            result = self._transformer(snippet, max_length=60, min_length=18, do_sample=False)
+        except Exception:
+            return None
+        if not result:
+            return None
+        summary_text = result[0].get("summary_text", "").strip()
+        return summary_text or None
