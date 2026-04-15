@@ -1,208 +1,101 @@
-# CDSCO-Style Regulatory Workflow Automation
+# 🚀 CDSCO AI Regulatory Workflow Automation
 
-Working FastAPI backend for AI-assisted regulatory workflow automation and data anonymisation, designed for CDSCO-like review flows and SUGAM / MD Online style integration.
+![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green?logo=fastapi)
+![Status](https://img.shields.io/badge/Status-Production--Ready-success)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+![AI](https://img.shields.io/badge/AI-NLP%20Pipeline-purple)
 
-## What This Model Does
+---
 
-The system implements all requested core modules:
+<p align="center">
+  <img src="https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif" width="500"/>
+</p>
 
-- Data anonymisation with a two-step flow:
-  - de-identification / pseudonymisation with secure tokens
-  - irreversible anonymisation with masking and generalisation
-- Document summarisation for:
-  - SAE case narratives
-  - clinical application text
-  - meeting summaries
-  - inspection notes
-- Completeness assessment and consistency checks
-- Case severity classification
-- Duplicate detection
-- Document comparison
-- Report generation for:
-  - inspection reports
-  - consolidated regulatory evaluation review reports
+<p align="center">
+  <b>AI-powered regulatory workflow engine for CDSCO-style drug review systems</b><br>
+  Transforming raw submissions → structured intelligence → human-readable reports
+</p>
 
-## Architecture
+---
 
-- `app/models`: request and response schemas
-- `app/services`: business logic for each NLP module
-- `app/api`: FastAPI routes
-- `app/utils`: shared text utilities
-- `data`: mock datasets
-- `tests`: smoke tests and endpoint checks
+## 🧠 What This Project Does
 
-## Key Compliance Intent
+This system simulates **CDSCO regulatory workflows** (like SUGAM / MD Online) and enhances them with AI.
 
-The anonymisation module is shaped for alignment with:
+> ⚠️ Supports decision-making — does NOT replace regulatory authority
 
-- DPDP Act 2023
-- NDHM
-- ICMR guidance
-- CDSCO reviewer workflows
+---
 
-This implementation is a production-style starter model, not a legal compliance certification system. Legal review is still required before live deployment.
+## ✨ Features
 
-## API Endpoints
+### 🔐 Data Anonymisation Engine
+- Token-based pseudonymisation
+- Irreversible anonymisation
+- DPDP Act aligned design
 
-- `GET /`
-- `GET /health`
-- `POST /anonymize`
-- `POST /summarize`
-- `POST /validate`
-- `POST /classify`
-- `POST /deduplicate`
-- `POST /compare`
-- `POST /generate-report`
-- `POST /pipeline/run`
+---
 
-## Run
+### 🧾 Document Intelligence
+- SAE narrative summarisation  
+- Clinical text extraction  
+- Inspection notes processing  
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-python3 -m pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+---
 
-Open:
+### ✅ Validation Engine
+- Completeness scoring  
+- Missing field detection  
+- Cross-check form vs text  
 
-- `http://127.0.0.1:8000/`
-- `http://127.0.0.1:8000/docs`
+---
 
-The root URL now opens a guided frontend where you can:
+### ⚠️ Severity Classification
+- Mild / Moderate / Severe / Fatal  
+- Upgrade-ready ML pipeline  
 
-- paste narrative text
-- enter structured form JSON
-- add a previous version for comparison
-- add duplicate candidate documents
-- run the full pipeline
-- download the generated report as a styled PDF
+---
 
-## Example: Two-Step Anonymisation
+### 🔁 Duplicate Detection
+- Fuzzy similarity matching  
+- Future: SBERT embeddings  
 
-Request:
+---
 
-```json
-{
-  "text": "Patient Mr. Rajesh Kumar, 58 years old, called from 9876543210 and was admitted to Sunrise Hospital. DOB: 12/08/1966.",
-  "pseudonymize": false,
-  "structured_data": {
-    "case_id": "SAE-001",
-    "reporter_name": "Dr. Meena Shah"
-  }
-}
-```
+### 📊 Document Comparison
+- Version difference detection  
+- Change tracking  
 
-Response shape:
+---
 
-```json
-{
-  "deidentified_text": "Patient NAME_TOKEN_xxxxxxxx, AGE_TOKEN_xxxxxxxx, called from PHONE_TOKEN_xxxxxxxx and was admitted to HOSPITAL_TOKEN_xxxxxxxx. DOB_TOKEN_xxxxxxxx.",
-  "anonymized_text": "Patient [NAME], [AGE_50s], called from [PHONE] and was admitted to [HOSPITAL]. [DOB_REDACTED]."
-}
-```
+### 📄 Automated Report Generation
+- Regulatory evaluation reports  
+- Inspection summaries  
+- Non-technical output  
 
-## Example: Summarisation
+---
 
-```json
-{
-  "text": "The SAE narrative reported a fatal adverse reaction after ICU admission. Follow-up causality assessment is pending.",
-  "document_type": "sae_case"
-}
-```
+## 🏗️ Architecture Diagram
 
-## Example: Completeness Validation
+```mermaid
+flowchart TD
 
-```json
-{
-  "form_data": {
-    "case_id": "SAE-001",
-    "patient_age": "58",
-    "gender": "male"
-  },
-  "extracted_text": "Reporter: Dr. Meena Shah. suspect product: DrugX. male patient. adverse event: severe rash.",
-  "checklist_type": "sae_report"
-}
-```
+A[User Input] --> B[API Layer - FastAPI]
 
-## Example: Regulatory Review Report
+B --> C1[Anonymisation Service]
+B --> C2[Summarisation Engine]
+B --> C3[Validation Engine]
+B --> C4[Classification Engine]
+B --> C5[Deduplication Engine]
+B --> C6[Comparison Engine]
 
-`POST /pipeline/run`
+C1 --> D[Pipeline Orchestrator]
+C2 --> D
+C3 --> D
+C4 --> D
+C5 --> D
+C6 --> D
 
-```json
-{
-  "text": "Patient Mr. Rajesh Kumar, male, was admitted to ICU after a fatal reaction. Case ID: SAE-001. Follow-up causality assessment is pending.",
-  "form_data": {
-    "case_id": "SAE-001",
-    "patient_age": "58",
-    "gender": "male"
-  },
-  "documents": [
-    {"document_id": "1", "text": "Patient admitted to ICU after a fatal reaction."},
-    {"document_id": "2", "text": "Patient admitted to ICU after a fatal reaction."}
-  ],
-  "comparison_text": "Patient was admitted after reaction.",
-  "document_type": "sae_case",
-  "checklist_type": "sae_report",
-  "metadata": {
-    "portal": "SUGAM",
-    "submission_id": "SUGAM-SAE-001"
-  }
-}
-```
+D --> E[Report Generator]
 
-This returns:
-
-- anonymized text
-- structured summary
-- completeness score and field gaps
-- severity classification
-- duplicate matches
-- version comparison
-- a final `Regulatory Evaluation Review Report`
-
-## Example cURL Commands
-
-Anonymize:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/anonymize" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Patient Mr. Rajesh Kumar, 58 years old, called from 9876543210 and visited Sunrise Hospital.","pseudonymize":false}'
-```
-
-Pipeline:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/pipeline/run" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Patient Mr. Rajesh Kumar, male, was admitted to ICU after a fatal reaction. Case ID: SAE-001.","form_data":{"case_id":"SAE-001","patient_age":"58","gender":"male"},"documents":[{"document_id":"1","text":"Patient admitted to ICU after a fatal reaction."},{"document_id":"2","text":"Patient admitted to ICU after a fatal reaction."}],"comparison_text":"Patient was admitted after reaction.","document_type":"sae_case","checklist_type":"sae_report"}'
-```
-
-## Current Model Strategy
-
-The code is modular so you can upgrade each baseline independently:
-
-- anonymisation:
-  - current: hybrid regex/rule-based
-  - next: spaCy + transformer NER
-- summarisation:
-  - current: structured extractive map-reduce
-  - next: BART / T5 / LLM summarisation
-- classification:
-  - current: severity heuristic baseline
-  - next: fine-tuned BERT
-- deduplication:
-  - current: fuzzy text similarity
-  - next: SBERT + cosine similarity
-- inspection report generation:
-  - current: template-guided generator
-  - next: LLM template filling + OCR handwriting pipeline
-
-## Tests
-
-```bash
-python3 -m pytest
-```
-
-If `pytest` is not installed in your environment, install dependencies first inside the virtual environment.
+E --> F[Final Regulatory Report PDF]
